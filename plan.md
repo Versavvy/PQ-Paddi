@@ -10,11 +10,13 @@ This phase is intentionally a content-quality and API-integration tester. It doe
 
 The first prototype is implemented and builds successfully. The local app is available at `http://localhost:3000` while the development server is running.
 
-- The app is fixed to JAMB Mathematics, 2023, after checking availability for both 2024 and 2023.
+- The app now supports JAMB Mathematics, English, Chemistry, Biology, and Physics.
 - The API key is read only by the server route in `src/app/api/questions/route.ts`.
-- ALOC returned `404 No questions found matching the requested filters` for Mathematics/JAMB/2024.
-- ALOC returned `200` with questions for Mathematics/JAMB/2023, so 2023 is now the active test year.
-- The next step is to exercise the live question flow with the 2023 content before adding pagination or assessment sessions.
+- English and Biology have no matching 2023 records, so the subject tester uses each subject's available JAMB bank across years.
+- Each subject request fetches up to 30 questions by combining two cursor-based pages of 15; all five subjects returned 30 questions in the latest smoke test.
+- The UI now supports `All available years` and every year from 2019 through 2025. A selected year is sent to ALOC; the all-years option omits the year filter.
+- Year availability differs by subject: for example, Mathematics has 2023 data while English has no 2023 match and uses the all-years bank.
+- The next step is to exercise each subject in the UI and inspect content quality, including images and mathematical notation.
 
 ## ALOC API Notes
 
@@ -45,11 +47,11 @@ The API key must remain server-side. It must not use a `NEXT_PUBLIC_` prefix, ap
 
 - [x] Confirm this plan.
 - [x] Confirm Mathematics as the initial subject.
-- [x] Set the first tester to JAMB Mathematics; 2025 had no content, so 2023 is the active year.
+- [x] Expand the tester to Mathematics, English, Chemistry, Biology, and Physics.
 - [x] Create an ALOC developer account and generate an API key.
 - [x] Verify the developer email.
 - [x] Add `ALOC_API_KEY` to local `.env.local`.
-- [x] Smoke-test candidate years; 2024 returned `404`, while 2023 returned `200` with questions.
+- [x] Smoke-test subject availability; Mathematics, Chemistry, and Physics have 2023 data, while English and Biology require year-agnostic bank queries.
 
 **Exit criteria:** We agree on the first-screen controls and the API key is available for local testing.
 
@@ -66,19 +68,20 @@ The API key must remain server-side. It must not use a `NEXT_PUBLIC_` prefix, ap
 ## Phase 2: Test the ALOC Questions Endpoint
 
 - [x] Add the Next.js route handler `GET /api/questions`.
-- [x] Enforce the approved Mathematics/2023 scope on the server.
+- [x] Enforce a server-side allowlist for the five supported subjects.
 - [x] Always send `examType=jamb` from the server rather than trusting the browser to choose another exam type.
-- [x] Forward only supported filters and a conservative `limit`.
+- [x] Forward only supported filters and use ALOC's supported page size of 15.
 - [x] Normalize the ALOC envelope into a small app-facing response while preserving pagination and useful diagnostic metadata.
 - [x] Handle missing API key, upstream errors, empty results, and service failures with clear messages.
-- [x] Test focused requests for 2024 and 2023; 2023 returned live questions.
+- [x] Combine two cursor pages and smoke-test all five subjects; each returned 30 questions.
 
 **Exit criteria:** A local route can retrieve and return real JAMB question data without exposing the API key.
 
 ## Phase 3: Build the Question Tester UI
 
-- [ ] Add subject selection; the prototype currently uses the approved fixed Mathematics scope.
-- [ ] Add an optional year selector; the prototype currently uses the approved fixed 2023 scope.
+- [x] Add subject selection for Mathematics, English, Chemistry, Biology, and Physics.
+- [x] Add exam-year selection for All available years and 2019 through 2025.
+- [x] Use the available subject bank across years when a selected subject has no matching year.
 - [x] Add a `Load questions` action that makes one deliberate request.
 - [x] Render the current question text and answer options when ALOC returns data.
 - [x] Render reading-comprehension passages when ALOC returns passage fields.
@@ -103,9 +106,9 @@ The API key must remain server-side. It must not use a `NEXT_PUBLIC_` prefix, ap
 
 ## Phase 5: Pagination and Session Decision
 
-- [ ] Decide whether the tester needs more than the initial result set.
-- [ ] If needed, add cursor-based `Load more` behavior using `pagination.nextCursor` and `pagination.hasMore`.
-- [ ] Do not implement offset/page-number pagination; ALOC documents cursor pagination.
+- [x] Decide that the tester needs up to 30 questions per subject.
+- [x] Add server-side cursor pagination using two 15-question ALOC pages.
+- [x] Avoid offset/page-number pagination; ALOC documents cursor pagination.
 - [ ] Measure credit usage and request volume while testing.
 - [ ] Compare raw question browsing with ALOC's assessment-session endpoint for fixed, non-repeating papers.
 - [ ] Choose whether the next iteration should use assessment sessions, raw filtered questions, or both.
@@ -126,7 +129,8 @@ The API key must remain server-side. It must not use a `NEXT_PUBLIC_` prefix, ap
 ## Initial Acceptance Criteria
 
 - A user can open the app and select a JAMB subject.
-- A user can optionally filter by year and load questions from ALOC.
+- A user can load up to 30 questions from the selected subject's available JAMB bank.
+- A user can select All available years or a supported exam year before loading questions.
 - The API key is used only by the Next.js server.
 - A question displays its text and answer options correctly.
 - A user can select an answer, move forward, move backward, and see progress.
@@ -146,5 +150,6 @@ The API key must remain server-side. It must not use a `NEXT_PUBLIC_` prefix, ap
 
 ## Next Decisions
 
-1. Exercise the Mathematics/JAMB/2023 question flow and inspect content quality.
-2. After the populated set is reviewed, decide whether to add cursor pagination or move to ALOC assessment sessions.
+1. Exercise all five subject flows and inspect content quality.
+2. Add more year choices if ALOC content review shows they are useful.
+3. After review, decide whether to move to ALOC assessment sessions.

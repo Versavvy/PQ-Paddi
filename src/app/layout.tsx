@@ -14,7 +14,7 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PQ Paddi | JAMB Mathematics",
+  title: "PQ Paddi | JAMB Question Lab",
   description: "A focused JAMB question quality tester.",
 };
 

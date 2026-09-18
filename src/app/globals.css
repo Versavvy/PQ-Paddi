@@ -177,6 +177,23 @@
   .set-details strong {
     font-size: 14px;
   }
+  .subject-select {
+    appearance: none;
+    border: 0;
+    border-bottom: 1px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    font:
+      600 14px var(--font-manrope),
+      sans-serif;
+    max-width: 100%;
+    padding: 2px 18px 3px 0;
+  }
+  .subject-select:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
   .primary-button,
   .secondary-button,
   .text-button {
@@ -359,6 +376,27 @@
     max-height: 150px;
     overflow: auto;
     margin-top: 23px;
+  }
+  .question-image {
+    margin: 24px 0 0;
+    border: 1px solid var(--line);
+    background: #f8f6ef;
+    padding: 12px;
+  }
+  .question-image img {
+    display: block;
+    width: 100%;
+    max-height: 320px;
+    object-fit: contain;
+  }
+  .question-image figcaption {
+    color: var(--muted);
+    font:
+      9px var(--font-dm-mono),
+      monospace;
+    letter-spacing: 0.08em;
+    margin-top: 9px;
+    text-transform: uppercase;
   }
   .options-list {
     display: grid;

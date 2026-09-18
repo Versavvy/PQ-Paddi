@@ -13,11 +13,29 @@ type Question = {
   year?: number;
   hasPassage?: boolean;
   section?: string | null;
+  imageUrl?: string | null;
 };
 
 type QuizState = "idle" | "loading" | "ready" | "complete" | "error";
 
 const optionLabels = ["A", "B", "C", "D"];
+const subjects = [
+  {slug: "mathematics", label: "Mathematics"},
+  {slug: "english", label: "English"},
+  {slug: "chemistry", label: "Chemistry"},
+  {slug: "biology", label: "Biology"},
+  {slug: "physics", label: "Physics"},
+];
+const examYears = [
+  "all",
+  "2025",
+  "2024",
+  "2023",
+  "2022",
+  "2021",
+  "2020",
+  "2019",
+];
 
 function normalizeContent(value: string) {
   return value
@@ -49,6 +67,13 @@ function RichText({value}: {value: string}) {
 }
 
 function MathExpression({value}: {value: string}) {
+  const hasMathMarkup = /<(?:sup|sub|math)\b/i.test(value);
+  const hasMathToken = /\d|[=+×÷^_!%]|\s\/\s/.test(value);
+
+  if (!hasMathMarkup && !hasMathToken) {
+    return <RichText value={value} />;
+  }
+
   const normalized = normalizeContent(value)
     .replace(/<sup>(.*?)<\/sup>/gi, "^{$1}")
     .replace(/<sub>(.*?)<\/sub>/gi, "_{$1}")
@@ -76,6 +101,8 @@ function MathExpression({value}: {value: string}) {
 }
 
 export default function Home() {
+  const [selectedSubject, setSelectedSubject] = useState("mathematics");
+  const [selectedYear, setSelectedYear] = useState("all");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -83,6 +110,10 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const currentQuestion = questions[currentIndex];
+  const subjectLabel =
+    subjects.find((subject) => subject.slug === selectedSubject)?.label ||
+    "Mathematics";
+  const yearLabel = selectedYear === "all" ? "Available bank" : selectedYear;
   const answeredCount = Object.keys(answers).length;
   const score = questions.reduce(
     (total, question, index) =>
@@ -98,7 +129,9 @@ export default function Home() {
     setCurrentIndex(0);
 
     try {
-      const response = await fetch("/api/questions?limit=10");
+      const response = await fetch(
+        `/api/questions?subject=${encodeURIComponent(selectedSubject)}&year=${selectedYear}`,
+      );
       const body = await response.json();
 
       if (!response.ok) {
@@ -106,7 +139,9 @@ export default function Home() {
       }
 
       if (!Array.isArray(body.data) || body.data.length === 0) {
-        throw new Error("No Mathematics questions were returned for 2023.");
+        throw new Error(
+          `No ${subjectLabel} questions were returned for ${yearLabel}.`,
+        );
       }
 
       setQuestions(body.data);
@@ -157,7 +192,7 @@ export default function Home() {
       </header>
 
       <section className="intro">
-        <p className="eyebrow">JAMB 2023 · Mathematics</p>
+        <p className="eyebrow">JAMB · {subjectLabel}</p>
         <h1>
           Practice with the
           <br />
@@ -174,22 +209,46 @@ export default function Home() {
           <div className="panel-heading">
             <div>
               <p className="section-kicker">Your practice set</p>
-              <h2>Mathematics · 2023</h2>
+              <h2>{subjectLabel} · JAMB</h2>
             </div>
             <span className="year-badge">JAMB</span>
           </div>
           <div className="set-details">
             <div>
               <span className="detail-label">Subject</span>
-              <strong>Mathematics</strong>
+              <select
+                className="subject-select"
+                value={selectedSubject}
+                onChange={(event) => setSelectedSubject(event.target.value)}
+                disabled={status === "loading"}
+                aria-label="Choose a JAMB subject"
+              >
+                {subjects.map((subject) => (
+                  <option key={subject.slug} value={subject.slug}>
+                    {subject.label}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <span className="detail-label">Exam year</span>
-              <strong>2023</strong>
+              <select
+                className="subject-select"
+                value={selectedYear}
+                onChange={(event) => setSelectedYear(event.target.value)}
+                disabled={status === "loading"}
+                aria-label="Choose a JAMB exam year"
+              >
+                {examYears.map((year) => (
+                  <option key={year} value={year}>
+                    {year === "all" ? "All available years" : year}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <span className="detail-label">Question set</span>
-              <strong>Up to 10</strong>
+              <strong>Up to 30</strong>
             </div>
           </div>
           {error && (
@@ -210,7 +269,7 @@ export default function Home() {
             <span aria-hidden="true">→</span>
           </button>
           <p className="credit-note">
-            Questions are fetched from ALOC Station on demand.
+            Up to 30 questions are fetched from ALOC Station on demand.
           </p>
         </section>
       ) : status === "complete" ? (
@@ -281,6 +340,16 @@ export default function Home() {
               <div className="passage">
                 <RichText value={currentQuestion.section} />
               </div>
+            )}
+            {currentQuestion.imageUrl && (
+              <figure className="question-image">
+                <img
+                  src={currentQuestion.imageUrl}
+                  alt="Diagram or image for this question"
+                  loading="lazy"
+                />
+                <figcaption>Question illustration</figcaption>
+              </figure>
             )}
             <h2 className="question-text">
               <RichText value={currentQuestion.text} />
